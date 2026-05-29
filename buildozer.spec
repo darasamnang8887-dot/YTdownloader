@@ -26,7 +26,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # We include python3, Kivy, yt-dlp, openssl for HTTPS, requests, pyjnius, and supporting libraries
-requirements = python3,kivy==2.3.0,openssl,requests,urllib3,certifi,idna,charset-normalizer,pyjnius
+requirements = python3==3.11,kivy==2.3.0,openssl,requests,urllib3,certifi,idna,charset-normalizer,pyjnius
 
 # (str) Supported orientations (portrait, landscape or all)
 orientation = portrait
