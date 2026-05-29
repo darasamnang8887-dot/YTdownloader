@@ -51,12 +51,20 @@ jobs:
 
     - name: Build APK with Buildozer
       run: |
-        # Accept Android SDK licenses automatically and build
-        yes | buildozer android debug
+        # Accept Android SDK licenses automatically, run with verbosity, and log to file
+        yes | buildozer -v android debug > buildozer_log.txt 2>&1
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
+    - name: Upload Build Logs (Always)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: buildozer-compilation-log
+        path: buildozer_log.txt
+
     - name: Locate and Upload APK Artifact
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: yt-downloader-android-apk
