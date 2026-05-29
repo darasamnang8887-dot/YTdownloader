@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+.env
+.tox
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Kivy / Buildozer
+.buildozer/
+bin/
+*.spec-backup
+
+# PyInstaller / Compilation
+build/
+dist/
+*.spec
+
+# Application Local downloads
+downloads/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

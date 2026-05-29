@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YT Downloader by Youmeas</title>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- 1. HEADER SECTION -->
+        <header class="header">
+            <div class="logo-container">
+                <img src="/static/logo.png" alt="Logo" class="app-logo" onerror="this.innerHTML='📥';">
+            </div>
+            <div class="header-text">
+                <h1 class="title">YT Downloader</h1>
+                <p class="subtitle">by Youmeas</p>
+            </div>
+        </header>
+
+        <!-- 2. DOWNLOAD CENTER CONSOLE -->
+        <main class="card console-card">
+            <h2 class="section-title">Download Center</h2>
+            
+            <div class="input-group">
+                <input type="text" id="urlInput" placeholder="Paste YouTube, TikTok, or Facebook URL here..." autocomplete="off">
+            </div>
+
+            <div class="control-row">
+                <button id="pasteBtn" class="btn btn-secondary">📋 Paste</button>
+                <button id="clearBtn" class="btn btn-secondary">❌ Clear</button>
+            </div>
+
+            <button id="fetchBtn" class="btn btn-primary">🔍 Fetch Info</button>
+        </main>
+
+        <!-- 3. VIDEO METADATA PREVIEW (Hidden by default) -->
+        <section id="previewCard" class="card preview-card hidden">
+            <div class="thumbnail-wrapper">
+                <img id="videoThumb" src="" alt="Thumbnail" class="video-thumbnail">
+            </div>
+            
+            <div class="video-info">
+                <h3 id="videoTitle" class="video-title">Video Title</h3>
+                <p id="videoMeta" class="video-meta">Channel • Duration • Views</p>
+            </div>
+
+            <div class="select-group">
+                <label for="qualitySelect">Quality Format:</label>
+                <select id="qualitySelect" class="form-select">
+                    <!-- Extracted options will be injected dynamically -->
+                </select>
+            </div>
+
+            <button id="downloadBtn" class="btn btn-accent">📥 Start Download</button>
+
+            <!-- Server download loader -->
+            <div id="loader" class="loader hidden">
+                <div class="spinner"></div>
+                <p id="loaderText">Downloading to server... Please wait.</p>
+            </div>
+
+            <!-- Client save button -->
+            <div id="saveWrapper" class="save-wrapper hidden">
+                <a id="saveBtn" href="#" class="btn btn-success" download>⬇️ Save File to Device</a>
+                <p class="save-note">Successfully downloaded to server! Tap button above to save to your device.</p>
+            </div>
+        </section>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <p id="statusText">Ready • Multi-device Web App mode</p>
+        </footer>
+    </div>
+
+    <!-- AJAX Client Logic Script -->
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const pasteBtn = document.getElementById('pasteBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const previewCard = document.getElementById('previewCard');
+        const videoThumb = document.getElementById('videoThumb');
+        const videoTitle = document.getElementById('videoTitle');
+        const videoMeta = document.getElementById('videoMeta');
+        const qualitySelect = document.getElementById('qualitySelect');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const loader = document.getElementById('loader');
+        const loaderText = document.getElementById('loaderText');
+        const saveWrapper = document.getElementById('saveWrapper');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusText = document.getElementById('statusText');
+
+        // Paste action
+        pasteBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    urlInput.value = text;
+                    statusText.textContent = "Pasted link from clipboard.";
+                }
+            } catch (err) {
+                statusText.textContent = "Clipboard access blocked by browser. Please paste manually.";
+            }
+        });
+
+        // Clear action
+        clearBtn.addEventListener('click', () => {
+            urlInput.value = "";
+            previewCard.classList.add('hidden');
+            statusText.textContent = "Cleared link input.";
+        });
+
+        // Hide preview card on input changes
+        urlInput.addEventListener('input', () => {
+            previewCard.classList.add('hidden');
+        });
+
+        // Fetch Metadata via AJAX POST
+        fetchBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                alert("Please enter a valid video URL.");
+                return;
+            }
+
+            // UI Loading state
+            fetchBtn.disabled = true;
+            fetchBtn.textContent = "⏳ Fetching details...";
+            statusText.textContent = "Querying video metadata asynchronously...";
+            previewCard.classList.add('hidden');
+            saveWrapper.classList.add('hidden');
+            downloadBtn.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/fetch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Populate UI
+                    videoThumb.src = data.thumbnail;
+                    videoTitle.textContent = data.title;
+                    videoMeta.textContent = `Channel: ${data.author} • Duration: ${data.duration} • Views: ${data.views}`;
+
+                    // Populate formats selector
+                    qualitySelect.innerHTML = '<option value="Best Quality">Best Quality</option>';
+                    data.resolutions.forEach(res => {
+                        qualitySelect.innerHTML += `<option value="${res}p">${res}p</option>`;
+                    });
+                    qualitySelect.innerHTML += '<option value="Audio Only (M4A)">Audio Only (M4A)</option>';
+                    qualitySelect.innerHTML += '<option value="Audio Only (MP3)">Audio Only (MP3)</option>';
+
+                    previewCard.classList.remove('hidden');
+                    statusText.textContent = "Loaded metadata successfully.";
+                } else {
+                    alert(`Fetch Failed: ${data.error}`);
+                    statusText.textContent = "Fetch failed.";
+                }
+            } catch (err) {
+                alert("Network error: Could not query server.");
+                statusText.textContent = "Network error.";
+            } finally {
+                fetchBtn.disabled = false;
+                fetchBtn.textContent = "🔍 Fetch Info";
+            }
+        });
+
+        // Download Action via AJAX POST
+        downloadBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            const quality = qualitySelect.value;
+
+            // UI Download Loading state
+            downloadBtn.classList.add('hidden');
+            loader.classList.remove('hidden');
+            saveWrapper.classList.add('hidden');
+            statusText.textContent = "Started server-side downloading...";
+
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url, quality: quality })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Show final native browser download button!
+                    saveBtn.href = data.download_url;
+                    saveWrapper.classList.remove('hidden');
+                    statusText.textContent = "Server download complete! Tap below to save.";
+                } else {
+                    alert(`Download Failed: ${data.error}`);
+                    downloadBtn.classList.remove('hidden');
+                    statusText.textContent = "Download failed.";
+                }
+            } catch (err) {
+                alert("Network error occurred during download.");
+                downloadBtn.classList.remove('hidden');
+                statusText.textContent = "Network error.";
+            } finally {
+                loader.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
