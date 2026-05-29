@@ -27,6 +27,7 @@ bin/
 build/
 dist/
 *.spec
+!buildozer.spec
 
 # Application Local downloads
 downloads/
