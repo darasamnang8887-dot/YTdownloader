@@ -44,27 +44,29 @@ jobs:
     - name: Install Buildozer, Cython and virtualenv
       run: |
         python3 -m pip install --upgrade pip
-        # Kivy and python-for-android require Cython < 3.0.0
         python3 -m pip install --user --upgrade "Cython<3.0.0" virtualenv buildozer
         # Add local pip bin directory to PATH
         echo "/home/runner/.local/bin" >> $GITHUB_PATH
 
+    - name: Verify Buildozer Location
+      run: |
+        echo "=== PATH Environment ==="
+        echo $PATH
+        echo "=== Which Buildozer ==="
+        which buildozer || echo "Not found in PATH"
+        echo "=== Find Buildozer ==="
+        find /home/runner -name "buildozer" -type f
+        echo "=== Buildozer version ==="
+        buildozer --version || echo "Failed to run buildozer"
+
     - name: Build APK with Buildozer
       run: |
-        # Accept Android SDK licenses automatically, run with verbosity, and log to file
-        yes | buildozer -v android debug > buildozer_log.txt 2>&1
+        # Accept Android SDK licenses automatically and build live on console
+        yes | buildozer -v android debug
       env:
         APP_ANDROID_ACCEPT_SDK_LICENSE: "1"
 
-    - name: Upload Build Logs (Always)
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: buildozer-compilation-log
-        path: buildozer_log.txt
-
     - name: Locate and Upload APK Artifact
-      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: yt-downloader-android-apk
